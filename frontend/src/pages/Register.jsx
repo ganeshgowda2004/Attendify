@@ -11,6 +11,8 @@ function Register() {
     password: ""
   });
 
+  const [loading, setLoading] = useState(false);
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -18,38 +20,47 @@ function Register() {
     });
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
-    const users = JSON.parse(localStorage.getItem("users")) || [];
+    try {
+      // Generate Employee ID (Temporary — later we can move this to backend)
+      const newEmployeeId =
+        "EMP2025" + String(Math.floor(Math.random() * 1000)).padStart(3, "0");
 
-    // Prevent duplicate email
-    const existingUser = users.find(
-      (user) => user.email === formData.email
-    );
+      const response = await fetch(
+        "http://localhost:5000/api/auth/register",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            employee_id: newEmployeeId,
+            name: formData.name,
+            email: formData.email,
+            password: formData.password
+          })
+        }
+      );
 
-    if (existingUser) {
-      alert("User already registered with this email");
-      return;
+      const data = await response.json();
+
+      if (response.ok) {
+        alert(
+          `Registration Successful!\nYour Employee ID is: ${newEmployeeId}`
+        );
+        navigate("/");
+      } else {
+        alert(data.msg || "Registration failed");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Server error. Make sure backend is running.");
+    } finally {
+      setLoading(false);
     }
-
-    const newEmployeeId =
-      "EMP2025" + String(users.length + 1).padStart(3, "0");
-
-    const newUser = {
-      ...formData,
-      employeeId: newEmployeeId
-    };
-
-    users.push(newUser);
-
-    localStorage.setItem("users", JSON.stringify(users));
-
-    alert(
-      `Registration Successful!\nYour Employee ID is: ${newEmployeeId}`
-    );
-
-    navigate("/");
   };
 
   return (
@@ -92,8 +103,8 @@ function Register() {
           style={styles.input}
         />
 
-        <button type="submit" style={styles.button}>
-          Register
+        <button type="submit" style={styles.button} disabled={loading}>
+          {loading ? "Registering..." : "Register"}
         </button>
 
         <p style={{ textAlign: "center" }}>
@@ -119,16 +130,21 @@ const styles = {
     padding: "30px",
     backgroundColor: "white",
     borderRadius: "10px",
-    width: "320px"
+    width: "320px",
+    boxShadow: "0 4px 10px rgba(0,0,0,0.1)"
   },
   input: {
-    padding: "10px"
+    padding: "10px",
+    borderRadius: "5px",
+    border: "1px solid #ccc"
   },
   button: {
     padding: "10px",
     backgroundColor: "#16a34a",
     color: "white",
-    border: "none"
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer"
   }
 };
 

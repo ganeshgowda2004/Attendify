@@ -14,10 +14,12 @@ def register():
         return jsonify({"msg": "User already exists"}), 400
 
     user = User(
-        name=data["name"],
+        employee_id=data["employee_id"],
+        full_name=data["name"],   # ✅ FIXED
         email=data["email"],
         role="EMPLOYEE"
     )
+
     user.set_password(data["password"])
 
     db.session.add(user)
@@ -62,3 +64,8 @@ def admin_login():
         "access_token": token,
         "role": admin.role
     })
+
+@auth_bp.route("/test-db")
+def test_db():
+    users = User.query.all()
+    return jsonify({"count": len(users)})

@@ -4,27 +4,43 @@ import { useNavigate, Link } from "react-router-dom";
 function Login() {
   const navigate = useNavigate();
 
-  const [employeeId, setEmployeeId] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
-    const users = JSON.parse(localStorage.getItem("users")) || [];
+    try {
+      const response = await fetch(
+        "http://127.0.0.1:5000/api/auth/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: email,
+            password: password,
+          }),
+        }
+      );
 
-    const validUser = users.find(
-      (user) =>
-        user.employeeId === employeeId &&
-        user.password === password
-    );
+      const data = await response.json();
 
-    if (validUser) {
-      localStorage.setItem("token", "dummy-token");
-      localStorage.setItem("currentUser", JSON.stringify(validUser));
+      if (response.ok) {
+        // Save token & role
+        localStorage.setItem("token", data.access_token);
+        localStorage.setItem("role", data.role);
 
-      navigate("/dashboard");
-    } else {
-      alert("Invalid Employee ID or Password");
+        alert("Login Successful ✅");
+
+        navigate("/dashboard");
+      } else {
+        alert(data.msg || "Invalid credentials");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("Server error");
     }
   };
 
@@ -34,11 +50,12 @@ function Login() {
         <h2>Attendify Login</h2>
 
         <input
-          type="text"
-          placeholder="Employee ID"
-          value={employeeId}
-          onChange={(e) => setEmployeeId(e.target.value)}
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           style={styles.input}
+          required
         />
 
         <input
@@ -47,6 +64,7 @@ function Login() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           style={styles.input}
+          required
         />
 
         <button type="submit" style={styles.button}>
